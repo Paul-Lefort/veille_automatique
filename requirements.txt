@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlmodel
+psycopg2-binary
+python-dotenv
+trafilatura
+ollama
+pydantic
+jinja2
+beautifulsoup4

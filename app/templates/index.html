@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Veille Stratégique</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ink: '#111827',
+                        muted: '#6b7280',
+                        faint: '#9ca3af',
+                        line: '#e5e7eb',
+                        accent: '#111827',
+                        danger: '#ef4444',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['"IBM Plex Mono"', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #ffffff; }
+
+        .summary-content {
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .month-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #ffffff;
+        }
+
+        main { padding-top: 0.5rem; }
+
+        .article-card { transition: border-color 0.2s ease; }
+
+        a:focus-visible {
+            outline: 2px solid #111827;
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .article-card { transition: none; }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-ink font-sans">
+    <div class="max-w-5xl mx-auto px-6 md:px-8 py-12 md:py-16">
+
+        <header class="border-b border-line pb-8 mb-10">
+            <p class="font-mono text-[11px] tracking-[0.2em] text-muted uppercase mb-3">Veille &amp; analyse continue</p>
+            <h1 class="font-sans text-3xl md:text-[2.25rem] font-semibold tracking-tight text-ink leading-tight">
+                Dashboard de veille stratégique
+            </h1>
+            <p class="mt-4 text-sm text-muted max-w-2xl leading-relaxed">
+                Articles collectés, classés par catégorie et synthétisés automatiquement.
+            </p>
+        </header>
+
+        {% if error %}
+            <div role="alert" class="border-l-2 border-danger bg-danger/[0.04] px-5 py-4 mb-10">
+                <p class="text-xs font-semibold tracking-wide uppercase text-danger mb-1">Erreur de connexion à la base</p>
+                <p class="text-sm text-ink/80">{{ error }}</p>
+            </div>
+        {% endif %}
+
+        <main>
+            {% if grouped_articles %}
+                {% for month_title, month_articles in grouped_articles.items() %}
+
+                    <div class="month-header pt-2 pb-4">
+                        <h2 class="text-xs font-medium tracking-[0.15em] text-muted uppercase border-b border-line pb-3">
+                            {{ month_title }}
+                        </h2>
+                    </div>
+
+                    <div class="mb-4">
+                        {% for article in month_articles %}
+                            <div class="article-card group relative border-b border-line py-8 first:pt-2"
+                                 data-category="{{ article.category.value if article.category.value else article.category }}">
+
+                                <div class="flex gap-5 md:gap-7">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+                                            <span class="cat-label text-xs font-semibold tracking-wide uppercase text-muted">
+                                                {{ article.category.value if article.category.value else article.category }}
+                                            </span>
+                                            <span class="text-line text-xs">|</span>
+                                            <span class="font-mono text-xs text-faint">
+                                                {% if article.timestamp %}
+                                                    {{ article.timestamp[:10] }}
+                                                {% else %}
+                                                    Date inconnue
+                                                {% endif %}
+                                            </span>
+                                        </div>
+
+                                        <h3 class="font-sans text-lg md:text-xl font-medium text-ink leading-snug mb-4">
+                                            <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer"
+                                               class="hover:text-muted transition-colors duration-150">
+                                                {{ article.title }}
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-3.5 h-3.5 ml-0.5 mb-1 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                                </svg>
+                                            </a>
+                                        </h3>
+
+                                        <div class="border-l-2 border-line pl-4 py-1">
+                                            <p class="text-[10px] font-mono tracking-wider uppercase text-faint mb-2">Synthèse IA</p>
+                                            <p class="text-sm text-ink/80 summary-content">
+                                                {{ article.summary }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                {% if not error %}
+                    <div class="text-center py-24 border-t border-b border-line">
+                        <h3 class="font-sans text-lg font-medium text-ink">Aucun article enregistré</h3>
+                        <p class="mt-2 text-sm text-muted">Exécute <span class="font-mono text-ink/70">python main.py</span> pour alimenter la base de données.</p>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>
