@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # --- BASE DE DONNÉES POSTGRESQL ---
+  db:
+    image: postgres:15-alpine
+    container_name: veille_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+      POSTGRES_DB: ${PG_DATABASE:-veille_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- OLLAMA (LLM LOCAL) ---
+  ollama:
+    image: ollama/ollama:latest
+    container_name: veille_ollama
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  # --- APPLICATION FASTAPI + SCRAPER ---
+  web:
+    build: .
+    container_name: veille_web
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PG_HOST=db
+      - PG_PORT=5432
+      - PG_USER=${PG_USER:-postgres}
+      - PG_PASSWORD=${PG_PASSWORD:-postgres}
+      - PG_DATABASE=${PG_DATABASE:-veille_db}
+      - IMAP_SERVER=${IMAP_SERVER}
+      - EMAIL_ADDRESS=${EMAIL_ADDRESS}
+      - APP_PASSWORD=${APP_PASSWORD}
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - db
+      - ollama
+
+volumes:
+  postgres_data:
+  ollama_data:
